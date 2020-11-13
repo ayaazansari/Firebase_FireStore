@@ -31,17 +31,15 @@ class MainActivity : AppCompatActivity() {
             savePerson(person)
         }
 
-        subscribeToRealtimeUpdates()
-
         btnRetrieveData.setOnClickListener {
             retrievePersons()
         }
     }
 
-    private fun subscribeToRealtimeUpdates(){
-        personCollectionRef.addSnapshotListener {querySnapshot, firebaseFirestoreException ->
+    private fun subscribeToRealtimeUpdates() {
+        personCollectionRef.addSnapshotListener { querySnapshot, firebaseFirestoreException ->
             firebaseFirestoreException?.let {
-                Toast.makeText(this,it.message,Toast.LENGTH_LONG).show()
+                Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
                 return@addSnapshotListener
             }
             querySnapshot?.let {
@@ -56,8 +54,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun retrievePersons() = CoroutineScope(Dispatchers.IO).launch {
+        val fromAge = etFrom.text.toString().toInt()
+        val toAge = etTo.text.toString().toInt()
         try {
-            val querySnapshot = personCollectionRef.get().await()
+            val querySnapshot = personCollectionRef
+                    .whereGreaterThan("age", fromAge)
+                    .whereLessThan("age", toAge)
+                    .orderBy("age")
+                    .get()
+                    .await()
             val sb = StringBuilder()
             for(document in querySnapshot.documents) {
                 val person = document.toObject<Person>()
